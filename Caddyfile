@@ -33,13 +33,10 @@
 	log {
 		format json # set access log format to json mode
 	}
-
-	# proxy all requests for /* to the frontend, configure these variables in the service settings
 	reverse_proxy {
-		# for private networking replicas are exposed as multiple dns results, use those dns results as the upstreams
 		dynamic a {
-			name {$FRONTEND_DOMAIN}
-			port {$FRONTEND_PORT}
+			name {$LOGIN_DOMAIN}
+			port {$LOGIN_PORT}
 			refresh 1s
 			dial_timeout 30s
 			versions ipv4 ipv6
@@ -54,6 +51,30 @@
 		# sets the Host header to the header to the dynamic name and port options
 		header_up Host {upstream_hostport}
 	}
+
+	# proxy all requests for /dashboard/* to the frontend, configure these variables in the service settings
+	handle /dashboard/* {
+		reverse_proxy {
+			# for private networking replicas are exposed as multiple dns results, use those dns results as the upstreams
+			dynamic a {
+				name {$FRONTEND_DOMAIN}
+				port {$FRONTEND_PORT}
+				refresh 1s
+				dial_timeout 30s
+				versions ipv4 ipv6
+			}
+	
+			# configure load balancing settings
+			import lb_settings
+	
+			# configure passive health checks
+			import passive_health_checks
+	
+			# sets the Host header to the header to the dynamic name and port options
+			header_up Host {upstream_hostport}
+		}
+	}
+	
 
 	# the handle_path directive WILL strip /api/ from the path before proxying
 	# use `handle` instead of `handle_path` if you dont want to strip the /api/ path
